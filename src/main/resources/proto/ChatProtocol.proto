@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package com.mcorp.MChat.protocol;
+
+option java_outer_classname = "ChatModel"; // Generated Java class name
+
+// Unified message envelope
+message MessageRequest {
+  int64 fromId = 1;      // Sender ID
+  int64 toId = 2;        // Receiver ID (user ID for P2P, group ID for group chat)
+  MessageType type = 3;  // Message type
+  string content = 4;    // Message content
+  int64 timestamp = 5;   // Timestamp (epoch millis)
+  string groupId = 6;    // Group ID (for group operations)
+  int64 messageId = 7;   // Unique message ID for ACK tracking
+}
+
+enum MessageType {
+  LOGIN = 0;
+  CHAT_P2P = 1;      // Private chat
+  CHAT_GROUP = 2;     // Group chat
+  ACK = 3;            // Acknowledgement
+  CREATE_GROUP = 4;   // Create a group
+  JOIN_GROUP = 5;     // Join a group
+  LEAVE_GROUP = 6;    // Leave a group
+  LOGIN_RESP = 7;     // Login response
+}

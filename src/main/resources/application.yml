@@ -1,0 +1,15 @@
+server:
+  port: 8080
+
+mchat:
+  netty:
+    port: 8888
+    reader-idle-time: 60
+  server:
+    id: server-1  # Unique ID for this server instance (used for cross-server routing)
+
+spring:
+  data:
+    redis:
+      host: localhost
+      port: 6379

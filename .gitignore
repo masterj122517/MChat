@@ -1,0 +1,58 @@
+# --- [ 编译产物 ] ---
+target/
+*.class
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# --- [ Spring Boot & 运行时 ] ---
+*.log
+.logs/
+run/
+temp/
+bin/
+
+# --- [ IntelliJ IDEA ] ---
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+.mvn/wrapper/
+
+# --- [ Neovim / Vim / VS Code ] ---
+.vscode/
+.history/
+*~
+*.swp
+*.swo
+.netrwhist
+[._]*.s[a-v][a-z]
+[._]*.sw[a-p]
+[._]s[a-rt-z][a-z]
+[._]ss[a-gi-z]
+[._]sw[a-p]
+
+# --- [ 操作系统相关 ] ---
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# --- [ 配置文件与密钥 ] ---
+# Sir, 建议不要将包含数据库密码的 application.yml 直接上传
+# 可以保留 application.yml.example 作为模版
+*.jks
+*.p12
+*.crt
+*.key
+.env
+
+# --- [ 测试报告 ] ---
+/test-output/
+/surefire-reports/
