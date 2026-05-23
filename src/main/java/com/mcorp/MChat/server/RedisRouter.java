@@ -5,29 +5,17 @@ import com.mcorp.MChat.protocol.ProtocolConstants;
 import com.mcorp.MChat.utils.RedisUtil;
 import io.netty.channel.Channel;
 import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.connection.MessageListener;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.stereotype.Component;
 
-import java.util.UUID;
+import java.nio.charset.StandardCharsets;
 
-/**
- * Redis-based routing layer for cross-server communication.
- *
- * When user A is on Server1 and user B is on Server2:
- * 1. Server1 checks if user B is local (SessionManager) -> not found
- * 2. Server1 publishes the message to Redis channel "mchat:route:{targetUserId}"
- * 3. Server2 (subscribed to that channel) receives the message and delivers locally
- *
- * Additionally, each server registers its online users in Redis so other servers
- * can check if a user is online somewhere in the cluster.
- */
 @Slf4j
 @Component
 public class RedisRouter {
@@ -38,33 +26,34 @@ public class RedisRouter {
     @Value("${mchat.server.id:#{T(java.util.UUID).randomUUID().toString().substring(0,8)}}")
     private String serverId;
 
-    private RedisMessageListenerContainer listenerContainer;
+    @Autowired
+    private RedisMessageListenerContainer sharedListenerContainer;
+
+    private static RedisMessageListenerContainer staticListenerContainer;
 
     @PostConstruct
     public void init() {
+        staticListenerContainer = sharedListenerContainer;
         log.info("RedisRouter initialized for server: {}", serverId);
     }
 
-    /**
-     * Try to route a message to a user that is NOT on this server.
-     * Returns true if the message was published to Redis (user may be on another server).
-     * Returns false if Redis is unavailable or the user is not registered anywhere.
-     */
     public static boolean routeToRemote(String targetUserId, Message msg) {
         try {
             RedisTemplate<String, Object> redis = RedisUtil.getRedis();
             if (redis == null) return false;
 
-            // Check if the user is online on any server in the cluster
             String onlineServer = (String) redis.opsForValue().get(ONLINE_KEY_PREFIX + targetUserId);
             if (onlineServer == null) {
-                // User not online on any server
                 return false;
             }
 
-            // Publish to the target server's routing channel
-            String channel = CHANNEL_PREFIX + targetUserId;
-            redis.convertAndSend(channel, msg.getBody());
+            byte[] channelBytes = (CHANNEL_PREFIX + targetUserId).getBytes(StandardCharsets.UTF_8);
+            byte[] fullMessage = msg.getBody();
+            redis.execute((org.springframework.data.redis.core.RedisCallback<Void>) connection -> {
+                connection.publish(channelBytes, fullMessage);
+                return null;
+            });
+
             log.info("Routed message for user {} via Redis Pub/Sub", targetUserId);
             return true;
 
@@ -74,10 +63,6 @@ public class RedisRouter {
         }
     }
 
-    /**
-     * Register a user as online on this server.
-     * Called when a user logs in.
-     */
     public static void registerUserOnline(String username) {
         try {
             RedisTemplate<String, Object> redis = RedisUtil.getRedis();
@@ -89,10 +74,6 @@ public class RedisRouter {
         }
     }
 
-    /**
-     * Unregister a user when they go offline.
-     * Called when a user disconnects.
-     */
     public static void unregisterUser(String username) {
         try {
             RedisTemplate<String, Object> redis = RedisUtil.getRedis();
@@ -104,14 +85,12 @@ public class RedisRouter {
         }
     }
 
-    /**
-     * Subscribe to Redis channel for a specific user on this server.
-     * When a message arrives via Redis Pub/Sub, deliver it locally.
-     */
-    public static void subscribeForUser(String username, RedisConnectionFactory connectionFactory) {
+    public static void subscribeForUser(String username) {
         try {
-            RedisMessageListenerContainer container = new RedisMessageListenerContainer();
-            container.setConnectionFactory(connectionFactory);
+            if (staticListenerContainer == null) {
+                log.error("Shared RedisMessageListenerContainer is not available, cannot subscribe for user {}", username);
+                return;
+            }
 
             MessageListener listener = (message, pattern) -> {
                 try {
@@ -129,9 +108,7 @@ public class RedisRouter {
                 }
             };
 
-            container.addMessageListener(listener, new ChannelTopic(CHANNEL_PREFIX + username));
-            container.afterPropertiesSet();
-            container.start();
+            staticListenerContainer.addMessageListener(listener, new ChannelTopic(CHANNEL_PREFIX + username));
             log.debug("Subscribed to Redis channel for user {}", username);
 
         } catch (Exception e) {

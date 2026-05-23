@@ -1,30 +1,62 @@
-# --- [ 编译产物 ] ---
+# ========================================
+# MChat — Build Output
+# ========================================
 target/
 *.class
+*.jar
 *.war
 *.ear
 *.zip
 *.tar.gz
 *.rar
 
-# --- [ Spring Boot & 运行时 ] ---
+# Maven wrapper (keep maven-wrapper.jar, ignore others)
+.mvn/wrapper/
+
+# ========================================
+# Spring Boot & Runtime
+# ========================================
 *.log
-.logs/
+*.log.gz
+*.log.*
+logs/
+/logs/
 run/
 temp/
-bin/
+application-local.yml
+application-prod.yml
 
-# --- [ IntelliJ IDEA ] ---
+# Spring DevTools
+!/.mvn/wrapper/maven-wrapper.jar
+
+# ========================================
+# IDE — IntelliJ IDEA
+# ========================================
 .idea/
 *.iml
 *.iws
 *.ipr
 out/
-.mvn/wrapper/
 
-# --- [ Neovim / Vim / VS Code ] ---
+# ========================================
+# IDE — Eclipse / STS
+# ========================================
+.classpath
+.project
+.settings/
+.springBeans
+.factorypath
+
+# ========================================
+# IDE — VS Code
+# ========================================
 .vscode/
 .history/
+*.code-workspace
+
+# ========================================
+# IDE — Vim / Neovim
+# ========================================
 *~
 *.swp
 *.swo
@@ -35,7 +67,9 @@ out/
 [._]ss[a-gi-z]
 [._]sw[a-p]
 
-# --- [ 操作系统相关 ] ---
+# ========================================
+# OS Files
+# ========================================
 .DS_Store
 .DS_Store?
 ._*
@@ -44,15 +78,39 @@ out/
 ehthumbs.db
 Thumbs.db
 
-# --- [ 配置文件与密钥 ] ---
-# Sir, 建议不要将包含数据库密码的 application.yml 直接上传
-# 可以保留 application.yml.example 作为模版
+# ========================================
+# Credentials & Secrets
+# ========================================
 *.jks
 *.p12
 *.crt
 *.key
+*.pem
+*.cer
 .env
+.env.*
+secrets/
+credentials/
 
-# --- [ 测试报告 ] ---
+# ========================================
+# Test & Coverage Reports
+# ========================================
 /test-output/
 /surefire-reports/
+/failsafe-reports/
+jacoco.exec
+*.jacoco
+coverage/
+
+# ========================================
+# Docker
+# ========================================
+docker-compose.override.yml
+
+# ========================================
+# Misc
+# ========================================
+*.tmp
+*.bak
+*.orig
+*~

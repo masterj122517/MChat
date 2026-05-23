@@ -82,6 +82,9 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
             // Send login response back to client
             sendLoginResponse(ctx.channel(), username, true, "Login successful");
 
+            // Subscribe to Redis Pub/Sub for cross-server message delivery
+            RedisRouter.subscribeForUser(username);
+
             // Re-join any groups the user was a member of
             rejoinGroups(username, ctx.channel());
 
